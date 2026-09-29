@@ -182,6 +182,25 @@ const bootstrap = Effect.gen(function* () {
 
   yield* snapShot.initialize;
 
+  if (Option.isSome(environment.attachedBackendUrl)) {
+    const attachedUrl = environment.attachedBackendUrl.value;
+    if (!isSupportedAttachedBackendUrl(attachedUrl)) {
+      return yield* new DesktopAttachUrlUnsupportedError();
+    }
+
+    // The window uses web pairing rather than desktop credentials for a server
+    // this process does not own; do not start a second backend (including WSL).
+    yield* desktopWindow.handleBackendReady(attachedUrl);
+    yield* appActivation.start.pipe(
+      Effect.tap(() => logBootstrapInfo("desktop app control socket ready")),
+      Effect.catch((error) => logStartupError("desktop app control socket unavailable", { error })),
+    );
+    yield* logBootstrapInfo("connected window to existing local backend", {
+      baseUrl: attachedUrl.href,
+    });
+    return;
+  }
+
   if (!settings.localEnvironmentEnabled) {
     yield* logBootstrapInfo("bootstrap skipping local environment (disabled in settings)");
     if (!(yield* Ref.get(state.quitting))) {

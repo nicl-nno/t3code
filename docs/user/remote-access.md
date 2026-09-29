@@ -62,6 +62,16 @@ created in Settings can only be copied from the client that created them while
 its Connections page stays open. If you leave or reload that page, create
 another link to share.
 
+### Use the desktop window with a standalone local server
+
+If the server is already running on this computer, a desktop build with attach
+support can open its window without starting a second server. Close any other T3
+desktop window first, start the standalone server, then launch the app with
+`T3CODE_ATTACH_URL=http://127.0.0.1:3773/` in its environment. The address must
+be a local HTTP origin with an explicit port. Pair the window with the server
+when prompted; it does not receive the server's credentials automatically.
+Without this setting, the desktop app starts and manages its own server as usual.
+
 ### Balance new threads across machines
 
 Auto balance is off by default. On web and desktop, enable it in

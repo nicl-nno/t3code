@@ -367,7 +367,10 @@ export const make = Effect.gen(function* () {
     DesktopWindowError
   > {
     yield* previewManager.getBrowserSession();
-    const applicationUrl = getDesktopUrl(environment.isDevelopment);
+    const applicationUrl = Option.match(environment.attachedBackendUrl, {
+      onNone: () => getDesktopUrl(environment.isDevelopment),
+      onSome: (url) => url.href,
+    });
     const iconPaths = yield* assets.iconPaths;
     const iconOption = getIconOption(iconPaths, environment.platform);
     const shouldUseDarkColors = yield* electronTheme.shouldUseDarkColors;
@@ -406,7 +409,11 @@ export const make = Effect.gen(function* () {
       title: environment.displayName,
       ...getWindowTitleBarOptions(shouldUseDarkColors, environment.platform),
       webPreferences: {
-        preload: environment.preloadPath,
+        // An attached server is not desktop-managed: keep Electron's privileged
+        // IPC bridge out of the web origin and use its normal pairing flow.
+        ...(Option.isNone(environment.attachedBackendUrl)
+          ? { preload: environment.preloadPath }
+          : {}),
         // The window boots hidden (show: false until ready-to-show), and
         // Chromium throttles hidden renderers: timers coalesce and rAF stops,
         // which stalls first paint. Boot unthrottled; the first-reveal trigger
